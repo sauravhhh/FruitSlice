@@ -162,6 +162,12 @@ const FRUITS=[
   {flesh:'#fff3bf', rind:'#facc15', seed:'#fffbe6', juice:'#ffe066'},
 ];
 const GRAV=1500;
+const wholeImg=[], halfImg=[];
+for(let i=0;i<4;i++){
+  const a=new Image(); a.src='img/whole-'+i+'.jpg'; wholeImg.push(a);
+  const b=new Image(); b.src='img/half-'+i+'.jpg'; halfImg.push(b);
+}
+function imgOK(im){ return im.complete && im.naturalWidth>0; }
 let state='menu', paused=false;
 let mode='classic';
 let fruits=[], halves=[], parts=[], popups=[], trail=[];
@@ -465,10 +471,22 @@ function drawFruit(f){
     ctx.fillStyle=fl%2<1?'#ffd43b':'#ff922b';
     ctx.beginPath(); ctx.arc(r*0.45,-r*1.15,5+Math.sin(fl)*1.5,0,7); ctx.fill();
   }
-  else if(f.type===0) drawWatermelon(r);
-  else if(f.type===1) drawOrange(r,f.seed);
-  else if(f.type===2) drawApple(r);
-  else drawLemon(r);
+  else{
+    const im=wholeImg[f.type];
+    if(imgOK(im)){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.clip();
+      const s=r*2.12;
+      ctx.drawImage(im,-s/2,-s/2,s,s);
+      ctx.restore();
+      ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(0,0,r-1,0,7); ctx.stroke();
+    }
+    else if(f.type===0) drawWatermelon(r);
+    else if(f.type===1) drawOrange(r,f.seed);
+    else if(f.type===2) drawApple(r);
+    else drawLemon(r);
+  }
   ctx.restore();
 }
 function halfPath(r,side){
@@ -480,33 +498,39 @@ function drawHalf(h){
   const T=FRUITS[h.type];
   ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(h.angle);
   ctx.globalAlpha=Math.max(0,1-h.t/1.4);
-  const r=h.r, side=h.side;
-  halfPath(r,side); ctx.fillStyle=T.rind; ctx.fill();
-  if(h.type===0){ halfPath(r*0.9,side); ctx.fillStyle='#eef7e8'; ctx.fill(); }
-  halfPath(r*(h.type===0?0.78:0.82),side);
-  const fg=ctx.createRadialGradient(0,0,r*0.1,0,0,r);
-  fg.addColorStop(0,'#ffffff'); fg.addColorStop(0.35,T.flesh); fg.addColorStop(1,T.flesh);
-  ctx.fillStyle=fg; ctx.fill();
-  if(h.type===1||h.type===3){
-    ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=2;
-    const a0=side<0?Math.PI/2:-Math.PI/2;
-    for(let i=0;i<=6;i++){
-      const a=a0+(i/6)*Math.PI;
-      ctx.beginPath(); ctx.moveTo(0,0);
-      ctx.lineTo(Math.cos(a)*r*0.72,Math.sin(a)*r*0.72); ctx.stroke();
-    }
-    ctx.fillStyle='rgba(255,255,255,.85)';
-    ctx.beginPath(); ctx.arc(0,0,r*0.07,0,7); ctx.fill();
-  }else if(h.type===0){
-    ctx.fillStyle='#262626';
-    const seeds=[[-0.3,-0.15],[0.25,-0.3],[0.05,-0.05],[-0.15,0.25],[0.3,0.15],[-0.4,0.05]];
-    for(const [sx,sy] of seeds){
-      ctx.beginPath(); ctx.ellipse(side*sx*r,sy*r,r*0.06,r*0.09,0.4,0,7); ctx.fill();
-    }
+  const r=h.r, side=h.side, im=halfImg[h.type];
+  if(imgOK(im)){
+    halfPath(r,side); ctx.clip();
+    const s=r*2.12;
+    ctx.drawImage(im,-s/2,-s/2,s,s);
   }else{
-    ctx.fillStyle='#6b4226';
-    ctx.beginPath(); ctx.ellipse(side*-r*0.25,-r*0.08,r*0.06,r*0.1,0.5,0,7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(side*-r*0.25,r*0.12,r*0.06,r*0.1,-0.5,0,7); ctx.fill();
+    halfPath(r,side); ctx.fillStyle=T.rind; ctx.fill();
+    if(h.type===0){ halfPath(r*0.9,side); ctx.fillStyle='#eef7e8'; ctx.fill(); }
+    halfPath(r*(h.type===0?0.78:0.82),side);
+    const fg=ctx.createRadialGradient(0,0,r*0.1,0,0,r);
+    fg.addColorStop(0,'#ffffff'); fg.addColorStop(0.35,T.flesh); fg.addColorStop(1,T.flesh);
+    ctx.fillStyle=fg; ctx.fill();
+    if(h.type===1||h.type===3){
+      ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=2;
+      const a0=side<0?Math.PI/2:-Math.PI/2;
+      for(let i=0;i<=6;i++){
+        const a=a0+(i/6)*Math.PI;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(a)*r*0.72,Math.sin(a)*r*0.72); ctx.stroke();
+      }
+      ctx.fillStyle='rgba(255,255,255,.85)';
+      ctx.beginPath(); ctx.arc(0,0,r*0.07,0,7); ctx.fill();
+    }else if(h.type===0){
+      ctx.fillStyle='#262626';
+      const seeds=[[-0.3,-0.15],[0.25,-0.3],[0.05,-0.05],[-0.15,0.25],[0.3,0.15],[-0.4,0.05]];
+      for(const [sx,sy] of seeds){
+        ctx.beginPath(); ctx.ellipse(side*sx*r,sy*r,r*0.06,r*0.09,0.4,0,7); ctx.fill();
+      }
+    }else{
+      ctx.fillStyle='#6b4226';
+      ctx.beginPath(); ctx.ellipse(side*-r*0.25,-r*0.08,r*0.06,r*0.1,0.5,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(side*-r*0.25,r*0.12,r*0.06,r*0.1,-0.5,0,7); ctx.fill();
+    }
   }
   ctx.restore();
 }
